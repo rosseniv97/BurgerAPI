@@ -6,13 +6,14 @@ const router = express.Router();
 const authorize = require("../../middlewares/auth");
 const { check, validationResult } = require('express-validator');
 const userSchema = require("../../models/User");
+const ordersSchema = require("../../models/Orders");
 
 
 
 // Sign-up
-    router.post("/register-user",
+router.post("/register-user",
     [
-        check('name','Name is required')
+        check('name', 'Name is required')
             .not()
             .isEmpty()
             .isLength({ min: 3 })
@@ -50,8 +51,8 @@ const userSchema = require("../../models/User");
                 });
             });
         }
-    
-});
+
+    });
 
 // Sign-in
 router.post("/signin", (req, res, next) => {
@@ -142,5 +143,31 @@ router.route('/delete-user/:id').delete((req, res, next) => {
         }
     })
 })
+
+router.route('/orders')
+    .post(authorize, (req, res, next) => {
+        const newOrder = new ordersSchema({
+            ingredients: req.body.ingredients,
+            delivery: req.body.user_data,
+            price: req.body.price,
+            userId: req.body.userId
+        });
+        newOrder.save().then((response) => {
+            res.status(201).json({
+                message: "Order successfully created!",
+                result: response
+            });
+        }).catch(error => {
+            res.status(500).json({
+                error: error
+            });
+        });
+    })
+    .get(authorize,(req, res, next)=>{
+        const userId = req.query.userId;
+        ordersSchema.find({userId: userId.toString()},function(err,result){
+            res.status(200).json(result);
+        })
+    })
 
 module.exports = router;
